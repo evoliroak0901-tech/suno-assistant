@@ -6,7 +6,7 @@ import { GENRES, VOCAL_TEXTURES, EMPHASIS_INSTRUMENTS } from "../constants";
 // Helper to get client with user's key
 const getAiClient = () => {
     let apiKey = '';
-    
+
     // 1. Try Local Storage (User's key)
     if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('suno_assist_api_key');
@@ -14,8 +14,9 @@ const getAiClient = () => {
     }
 
     // 2. Fallback to env (Dev/Hosted with specific key)
-    if (!apiKey && typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        apiKey = process.env.API_KEY;
+    const processEnv = (globalThis as any).process?.env;
+    if (!apiKey && processEnv && processEnv.API_KEY) {
+        apiKey = processEnv.API_KEY;
     }
 
     if (!apiKey) {
@@ -26,13 +27,13 @@ const getAiClient = () => {
 };
 
 export const convertToHiragana = async (text: string): Promise<string> => {
-  if (!text.trim()) return "";
+    if (!text.trim()) return "";
 
-  try {
-    const client = getAiClient();
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `You are a Japanese lyrics converter. 
+    try {
+        const client = getAiClient();
+        const response = await client.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `You are a Japanese lyrics converter. 
       Task: Convert the following Japanese song lyrics strictly into Hiragana (reading). 
       Rules:
       1. Maintain the exact same line structure and line breaks.
@@ -43,13 +44,13 @@ export const convertToHiragana = async (text: string): Promise<string> => {
       
       Lyrics:
       ${text}`,
-    });
+        });
 
-    return response.text?.trim() || "";
-  } catch (error) {
-    console.error("Error converting to Hiragana:", error);
-    return "変換エラー: APIキーを確認してください。";
-  }
+        return response.text?.trim() || "";
+    } catch (error) {
+        console.error("Error converting to Hiragana:", error);
+        return "変換エラー: APIキーを確認してください。";
+    }
 };
 
 export const generateLyrics = async (keywords: string): Promise<string | null> => {
@@ -193,25 +194,25 @@ export const analyzeVocalAudio = async (base64Audio: string, mimeType: string): 
 };
 
 export const generateSunoPrompt = async (params: PromptParams): Promise<string> => {
-  try {
-    const client = getAiClient();
+    try {
+        const client = getAiClient();
 
-    // Interpret XY Pad
-    let vocalDesc = "";
-    const x = params.vocalX;
-    const y = params.vocalY;
+        // Interpret XY Pad
+        let vocalDesc = "";
+        const x = params.vocalX;
+        const y = params.vocalY;
 
-    // Gender Logic
-    if (x < -30) vocalDesc += "Male vocals";
-    else if (x > 30) vocalDesc += "Female vocals";
-    else vocalDesc += "Androgynous/Neutral vocals";
+        // Gender Logic
+        if (x < -30) vocalDesc += "Male vocals";
+        else if (x > 30) vocalDesc += "Female vocals";
+        else vocalDesc += "Androgynous/Neutral vocals";
 
-    // Pitch Logic
-    if (y < -30) vocalDesc += ", Low pitch/Deep";
-    else if (y > 30) vocalDesc += ", High pitch/Soprano";
-    
-    // Construct the prompt for Gemini
-    const systemInstruction = `You are a Suno AI prompt generator expert.
+        // Pitch Logic
+        if (y < -30) vocalDesc += ", Low pitch/Deep";
+        else if (y > 30) vocalDesc += ", High pitch/Soprano";
+
+        // Construct the prompt for Gemini
+        const systemInstruction = `You are a Suno AI prompt generator expert.
     Task: Create a single string of comma-separated English style tags (Music Style) for Suno AI.
     
     CRITICAL CONSTRAINT: 
@@ -231,26 +232,26 @@ export const generateSunoPrompt = async (params: PromptParams): Promise<string> 
     [Genre], [Sub-genre], [Instruments], [Vocal Style], [Mood/Atmosphere], [Tempo]
     `;
 
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: "Generate the Suno prompt string now.",
-      config: {
-        systemInstruction: systemInstruction,
-      }
-    });
+        const response = await client.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: "Generate the Suno prompt string now.",
+            config: {
+                systemInstruction: systemInstruction,
+            }
+        });
 
-    let result = response.text?.trim() || "";
-    
-    // Enforce 1000 character limit (Suno limit)
-    if (result.length > 1000) {
-        result = result.substring(0, 1000);
+        let result = response.text?.trim() || "";
+
+        // Enforce 1000 character limit (Suno limit)
+        if (result.length > 1000) {
+            result = result.substring(0, 1000);
+        }
+
+        return result;
+    } catch (error) {
+        console.error("Error generating prompt:", error);
+        return "エラー: APIキーを確認してください。";
     }
-    
-    return result;
-  } catch (error) {
-    console.error("Error generating prompt:", error);
-    return "エラー: APIキーを確認してください。";
-  }
 };
 
 export const generateVisualPrompts = async (lyrics: string): Promise<VisualPromptResult | null> => {
@@ -350,7 +351,7 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
         // Iterate through parts to find the image
         if (response.candidates && response.candidates[0].content && response.candidates[0].content.parts) {
             for (const part of response.candidates[0].content.parts) {
-                if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+                if (part.inlineData?.mimeType?.startsWith('image/')) {
                     // Return data URI
                     return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
                 }
@@ -364,19 +365,19 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
 }
 
 export const createChatSession = (): Chat | null => {
-  try {
-    const client = getAiClient();
+    try {
+        const client = getAiClient();
 
-    return client.chats.create({
-      model: 'gemini-2.5-flash',
-      config: {
-        systemInstruction: "あなたはプロの音楽プロデューサー兼作詞家のアシスタントです。ユーザーの作詞、韻（ライム）、楽曲構成、Suno AIのプロンプト作成などについて、的確かつ励ますような口調でアドバイスをしてください。日本語で回答してください。",
-      }
-    });
-  } catch (e) {
-    console.error("Failed to create chat session:", e);
-    return null;
-  }
+        return client.chats.create({
+            model: 'gemini-2.5-flash',
+            config: {
+                systemInstruction: "あなたはプロの音楽プロデューサー兼作詞家のアシスタントです。ユーザーの作詞、韻（ライム）、楽曲構成、Suno AIのプロンプト作成などについて、的確かつ励ますような口調でアドバイスをしてください。日本語で回答してください。",
+            }
+        });
+    } catch (e) {
+        console.error("Failed to create chat session:", e);
+        return null;
+    }
 };
 
 // --- Audio Helpers (WAV Converter) ---
@@ -437,13 +438,13 @@ export const playVoiceSample = async (text: string, vocalX: number, vocalY: numb
         const client = getAiClient();
 
         // Determine voice based on X (Gender)
-        let voiceName = 'Zephyr'; 
+        let voiceName = 'Zephyr';
         if (vocalX < -20) {
-            voiceName = 'Charon'; 
+            voiceName = 'Charon';
         } else if (vocalX > 20) {
-            voiceName = 'Kore'; 
+            voiceName = 'Kore';
         } else {
-            voiceName = 'Puck'; 
+            voiceName = 'Puck';
         }
 
         const response = await client.models.generateContent({
@@ -468,13 +469,13 @@ export const playVoiceSample = async (text: string, vocalX: number, vocalY: numb
         // Convert Raw PCM to WAV Blob
         const int16Samples = decodeBase64ToInt16(base64Audio);
         const wavBlob = createWavFile(int16Samples, 24000); // 24kHz is standard for Gemini TTS
-        
+
         // Create URL and Play using standard Audio element
         const audioUrl = URL.createObjectURL(wavBlob);
         const audio = new Audio(audioUrl);
-        
+
         await audio.play();
-        
+
         // Cleanup after playback
         audio.onended = () => {
             URL.revokeObjectURL(audioUrl);
