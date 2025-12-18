@@ -7,20 +7,14 @@ import { GENRES, VOCAL_TEXTURES, EMPHASIS_INSTRUMENTS } from "../constants";
 const getAiClient = () => {
     let apiKey = '';
 
-    // 1. Try Local Storage (User's key)
+    // 1. Get from Local Storage (Mandatory in BYOK mode)
     if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('suno_assist_api_key');
         if (stored) apiKey = stored;
     }
 
-    // 2. Fallback to env (Dev/Hosted with specific key)
-    const processEnv = (globalThis as any).process?.env;
-    if (!apiKey && processEnv && processEnv.API_KEY) {
-        apiKey = processEnv.API_KEY;
-    }
-
     if (!apiKey) {
-        throw new Error("API Key is missing");
+        throw new Error("APIキーが設定されていません。設定画面からAPIキーを入力してください。");
     }
 
     return new GoogleGenAI({ apiKey });

@@ -148,12 +148,9 @@ export const App: React.FC = () => {
       }
     }
 
-    // Check for API Key
+    // Check for API Key (Local Storage only)
     const key = localStorage.getItem('suno_assist_api_key');
     if (key) setHasApiKey(true);
-    // Also check env for development
-    const processEnv = (globalThis as any).process?.env;
-    if (!key && processEnv && processEnv.API_KEY) setHasApiKey(true);
   }, []);
 
   const handleSaveApiKey = (key: string) => {

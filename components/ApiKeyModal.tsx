@@ -23,20 +23,20 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-orange-50/90 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-orange-100 flex flex-col max-h-[90vh]">
-                
+
                 {/* Header */}
                 <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white text-center">
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Suno Lyric Assist へようこそ</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Suno Lyric Assist</h1>
                     <p className="text-sm text-gray-500">
-                        このアプリを利用するには、Googleの無料AIキーが必要です。<br/>
-                        あなたのキーはブラウザ内にのみ保存され、外部サーバーには送信されません。
+                        このアプリを利用するには、自分自身で取得した <strong>Google APIキー(無料)</strong> の設定が必須です。<br />
+                        入力したキーはあなたのブラウザ内（LocalStorage）にのみ保存され、開発者や外部サーバーに送信されることはありません。
                     </p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 bg-gray-50 no-scrollbar">
                     {/* Tutorial Section */}
                     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
-                        <button 
+                        <button
                             onClick={() => setIsOpenTutorial(!isOpenTutorial)}
                             className="flex items-center justify-between w-full text-left font-bold text-orange-600 mb-2"
                         >
@@ -45,7 +45,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
                             </span>
                             <span>{isOpenTutorial ? '▲' : '▼'}</span>
                         </button>
-                        
+
                         {isOpenTutorial && (
                             <div className="space-y-4 mt-4 text-sm text-gray-600 border-t border-gray-100 pt-4 animate-in slide-in-from-top-2">
                                 <div className="flex gap-3">
@@ -87,8 +87,8 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
                         <label className="block text-sm font-bold text-gray-700">
                             APIキーを入力
                         </label>
-                        <input 
-                            type="password" 
+                        <input
+                            type="password"
                             value={inputKey}
                             onChange={(e) => setInputKey(e.target.value)}
                             placeholder="AIzaSy..."
@@ -99,8 +99,8 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ onSave }) => {
 
                 {/* Footer */}
                 <div className="p-6 bg-white border-t border-gray-100">
-                    <Button 
-                        onClick={handleSave} 
+                    <Button
+                        onClick={handleSave}
                         className="w-full py-4 text-lg font-bold shadow-orange-200 shadow-lg"
                         disabled={inputKey.length < 10}
                     >
