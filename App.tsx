@@ -626,10 +626,12 @@ export const App: React.FC = () => {
       if (image) {
         const base64Data = image.split(',')[1];
         const mimeType = image.split(';')[0].split(':')[1];
-        result = await chatSession.current.sendMessage([
-          { text: text },
-          { inlineData: { mimeType: mimeType, data: base64Data } }
-        ]);
+        result = await chatSession.current.sendMessage({
+          message: [
+            { text: text },
+            { inlineData: { mimeType: mimeType, data: base64Data } }
+          ]
+        });
       } else {
         result = await chatSession.current.sendMessage({ message: text });
       }
@@ -900,8 +902,8 @@ export const App: React.FC = () => {
                     onChange={handleArtistInputChange}
                     placeholder="例: King Gnu, Ado, 宇多田ヒカル"
                     className={`w-full p-3 pr-10 rounded-lg border focus:ring-2 outline-none text-base transition-all duration-300 ${isArtistAnalyzed
-                        ? 'border-emerald-400 bg-emerald-50 focus:ring-emerald-200 text-emerald-800'
-                        : `${t.border} focus:ring-blue-200`
+                      ? 'border-emerald-400 bg-emerald-50 focus:ring-emerald-200 text-emerald-800'
+                      : `${t.border} focus:ring-blue-200`
                       }`}
                   />
                   {isArtistAnalyzed && (
