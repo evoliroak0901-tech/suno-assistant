@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Chat } from "@google/genai";
+import { ChatSession as Chat } from "@google/generative-ai";
 import { TabType, AppMode, ChatMessage, ThemeSettings, VisualPromptResult, VocalPreset, LyricSection, VideoPromptResult } from './types';
 import { convertToHiragana, generateSunoPrompt, createChatSession, analyzeArtistStyle, playVoiceSample, generateVisualPrompts, generateImage, analyzeVocalAudio, generateVideoPromptForSection, generateLyrics } from './services/geminiService';
 import { TagPanel } from './components/TagPanel';
