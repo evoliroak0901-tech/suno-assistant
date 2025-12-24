@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TabType, AppMode, ThemeSettings, PromptParams } from './types';
+import { AppMode, PromptParams } from './types';
 import { 
   convertToHiragana, 
   generateLyrics,
@@ -9,17 +9,13 @@ import { THEMES } from './constants';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<AppMode>('lyrics');
-  // エラー対策：TabTypeに存在しない'lyrics'ではなく、存在する'main'などに合わせるか型を緩める
-  const [activeTab, setActiveTab] = useState<any>('lyrics'); 
   const [originalText, setOriginalText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // エラー対策：ThemeSettingsの構造に合わせる
-  const [theme, setTheme] = useState<any>(THEMES['orange']);
-
-  // アーティストスタイル分析用
   const [artistName, setArtistName] = useState('');
-  // エラー対策：不足していた'artist'を追加
+  const [status, setStatus] = useState<string>('');
+  
+  const t = THEMES['orange'];
+
   const [params, setParams] = useState<PromptParams>({
     artist: '',
     genres: [],
@@ -29,83 +25,105 @@ const App: React.FC = () => {
     vocalY: 0
   });
 
+  // AI実行関数
+  const handleAiAction = async (type: 'lyrics' | 'hiragana' | 'analyze') => {
+    setIsProcessing(true);
+    setStatus('AIが思考中...');
+    try {
+      if (type === 'lyrics') {
+        const res = await generateLyrics(originalText);
+        if (res) setOriginalText(res);
+      } else if (type === 'hiragana') {
+        const res = await convertToHiragana(originalText);
+        setOriginalText(res);
+      } else if (type === 'analyze') {
+        const res = await analyzeArtistStyle(artistName);
+        if (res) setParams({ ...res, artist: artistName });
+      }
+      setStatus('完了しました');
+    } catch (err) {
+      setStatus('エラーが発生しました');
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+      setTimeout(() => setStatus(''), 3000);
+    }
+  };
+
   return (
-    <div className={`min-h-screen w-full ${theme?.bgApp || 'bg-slate-50'} flex flex-col font-sans text-slate-900 transition-colors duration-500`}>
-      <header className="p-4 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-10 flex justify-between items-center">
-        <h1 className="font-black text-xl tracking-tighter text-orange-600">SUNO ASSISTANT</h1>
+    <div className={`min-h-screen w-full ${t.bgApp} flex flex-col font-sans text-slate-900`}>
+      <header className="p-4 bg-white shadow-md flex justify-between items-center sticky top-0 z-50">
+        <h1 className="font-black text-2xl text-orange-600 tracking-tighter">SUNO ASSISTANT PRO</h1>
         <div className="flex bg-slate-100 p-1 rounded-xl">
-          <button 
-            onClick={() => setMode('lyrics')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${mode === 'lyrics' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-50'}`}
-          >制作</button>
-          <button 
-            onClick={() => setMode('chat')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${mode === 'chat' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-50'}`}
-          >相談</button>
+          <button onClick={() => setMode('lyrics')} className={`px-6 py-2 rounded-lg font-bold ${mode === 'lyrics' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500'}`}>制作</button>
+          <button onClick={() => setMode('chat')} className={`px-6 py-2 rounded-lg font-bold ${mode === 'chat' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500'}`}>相談</button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-4xl mx-auto w-full p-4 md:p-6 pb-24">
+      <main className="flex-1 max-w-4xl mx-auto w-full p-6 space-y-8">
+        {status && (
+          <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-2 rounded-full text-sm font-bold shadow-xl animate-bounce">
+            {status}
+          </div>
+        )}
+
         {mode === 'lyrics' ? (
-          <div className="space-y-6">
-            <section className="bg-white rounded-3xl p-6 shadow-xl border border-orange-100">
-              <label className="block text-sm font-black mb-2 text-slate-400">LYRICS / KEYWORDS</label>
+          <>
+            {/* 歌詞セクション */}
+            <section className="bg-white rounded-3xl p-8 shadow-2xl border border-orange-100 transition-all">
+              <h2 className="text-xs font-black text-slate-400 mb-4 tracking-widest uppercase">Lyrics Editor</h2>
               <textarea 
-                className="w-full h-48 p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-orange-500 text-lg leading-relaxed resize-none"
-                placeholder="歌詞を入力するか、キーワードを入力して生成..."
+                className="w-full h-64 p-6 bg-slate-50 rounded-2xl border-none focus:ring-4 focus:ring-orange-200 text-xl leading-relaxed transition-all"
+                placeholder="ここに歌詞を入力、またはキーワードを入力..."
                 value={originalText}
                 onChange={(e) => setOriginalText(e.target.value)}
               />
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-2 gap-4 mt-6">
                 <button 
                   disabled={isProcessing}
-                  onClick={async () => {
-                    setIsProcessing(true);
-                    const res = await convertToHiragana(originalText);
-                    setOriginalText(res);
-                    setIsProcessing(false);
-                  }}
-                  className="bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition-all"
+                  onClick={() => handleAiAction('hiragana')}
+                  className="bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-slate-800 active:scale-95 disabled:opacity-50 transition-all"
                 >ひらがな変換</button>
                 <button 
                   disabled={isProcessing}
-                  onClick={async () => {
-                    setIsProcessing(true);
-                    const res = await generateLyrics(originalText);
-                    if(res) setOriginalText(res);
-                    setIsProcessing(false);
-                  }}
-                  className="bg-orange-500 text-white font-bold py-4 rounded-2xl hover:bg-orange-600 transition-all"
+                  onClick={() => handleAiAction('lyrics')}
+                  className="bg-orange-500 text-white font-black py-5 rounded-2xl hover:bg-orange-600 shadow-lg shadow-orange-200 active:scale-95 disabled:opacity-50 transition-all"
                 >AI歌詞生成</button>
               </div>
             </section>
 
-            <section className="bg-white rounded-3xl p-6 shadow-xl border border-orange-100">
-              <h3 className="font-black mb-4">ARTIST STYLE ANALYSIS</h3>
-              <div className="flex gap-2">
+            {/* アーティスト分析セクション */}
+            <section className="bg-white rounded-3xl p-8 shadow-2xl border border-orange-100">
+              <h2 className="text-xs font-black text-slate-400 mb-4 tracking-widest uppercase">Style Analyzer</h2>
+              <div className="flex gap-4">
                 <input 
                   type="text" 
-                  placeholder="好きなアーティスト名..."
-                  className="flex-1 p-3 bg-slate-50 rounded-xl border-none"
+                  className="flex-1 p-4 bg-slate-50 rounded-2xl border-none text-lg focus:ring-4 focus:ring-orange-200"
+                  placeholder="例: Vaundy, Mrs. GREEN APPLE..."
                   value={artistName}
                   onChange={(e) => setArtistName(e.target.value)}
                 />
                 <button 
-                  onClick={async () => {
-                    const res = await analyzeArtistStyle(artistName);
-                    if(res) {
-                      // 型エラー回避のためにartistプロパティを補完
-                      setParams({ ...res, artist: artistName });
-                    }
-                  }}
-                  className="bg-slate-200 px-6 font-bold rounded-xl"
-                >分析</button>
+                  disabled={isProcessing}
+                  onClick={() => handleAiAction('analyze')}
+                  className="bg-slate-200 px-8 font-black rounded-2xl hover:bg-slate-300 transition-all"
+                >分析実行</button>
               </div>
+              {params.genres.length > 0 && (
+                <div className="mt-6 p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                  <p className="text-sm font-bold text-orange-800">分析結果:</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {params.genres.map(g => <span key={g} className="bg-white px-3 py-1 rounded-full text-xs font-bold border border-orange-200">{g}</span>)}
+                    {params.instruments.map(i => <span key={i} className="bg-white px-3 py-1 rounded-full text-xs font-bold border border-orange-200 text-blue-600">{i}</span>)}
+                  </div>
+                </div>
+              )}
             </section>
-          </div>
+          </>
         ) : (
-          <div className="bg-white rounded-3xl p-6 h-[400px] shadow-xl flex flex-col items-center justify-center text-slate-400">
-            <p className="font-bold">相談モード準備中...</p>
+          <div className="h-96 flex flex-col items-center justify-center bg-white rounded-3xl shadow-inner">
+            <span className="text-6xl mb-4">💬</span>
+            <p className="text-slate-400 font-bold">チャット相談モード・アップデート中</p>
           </div>
         )}
       </main>
