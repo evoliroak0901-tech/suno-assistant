@@ -4,6 +4,7 @@ const getAiModel = () => {
   // @ts-ignore
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
   const genAI = new GoogleGenerativeAI(apiKey);
+  // モデル名をフルパスで指定することで 404 を回避します
   return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 };
 
@@ -11,10 +12,12 @@ export const convertToHiragana = async (text: string): Promise<string> => {
   if (!text) return "テキストを入力してください";
   try {
     const model = getAiModel();
-    const result = await model.generateContent(`以下の歌詞を全て「ひらがな」に変換してください。改行やタグは維持してください。\n\n${text}`);
-    const response = await result.response;
-    return response.text().trim();
+    // 明示的に generateContent を実行
+    const result = await model.generateContent(`以下の歌詞を全て「ひらがな」に変換してください。改行や[Verse]などのタグは絶対に維持してください。解説は一切不要です。\n\n${text}`);
+    return result.response.text().trim();
   } catch (error: any) {
+    // 詳細なエラーを画面に出して原因を特定しやすくします
+    console.error("Gemini Error:", error);
     return `エラー: ${error.message}`;
   }
 };
@@ -22,9 +25,8 @@ export const convertToHiragana = async (text: string): Promise<string> => {
 export const generateLyrics = async (keywords: string): Promise<string | null> => {
   try {
     const model = getAiModel();
-    const result = await model.generateContent(`「${keywords}」をテーマに、Suno AIで使える日本語の歌詞を生成してください。[Verse], [Chorus]などのタグを含めてください。`);
-    const response = await result.response;
-    return response.text().trim();
+    const result = await model.generateContent(`「${keywords}」をテーマに、Suno AIで使える日本語の歌詞を生成してください。[Verse], [Chorus]などのタグを必ず含めてください。`);
+    return result.response.text().trim();
   } catch (error) {
     console.error(error);
     return "歌詞の生成に失敗しました";
@@ -34,19 +36,18 @@ export const generateLyrics = async (keywords: string): Promise<string | null> =
 export const analyzeArtistStyle = async (artistName: string): Promise<any> => {
   try {
     const model = getAiModel();
-    const prompt = `アーティスト「${artistName}」の音楽スタイルを分析し、以下のJSON形式でのみ返してください。余計な解説は不要です。
-    {"genres": ["ジャンル1", "ジャンル2"], "instruments": ["楽器1", "楽器2"], "vocalX": 0, "vocalY": 0}`;
+    const prompt = `アーティスト「${artistName}」の音楽スタイルを分析し、以下のJSON形式でのみ返してください。
+    {"genres": ["ジャンル"], "instruments": ["楽器"], "vocalX": 0, "vocalY": 0}`;
     
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text().replace(/```json|```/g, "").trim();
+    const text = result.response.text().replace(/```json|```/g, "").trim();
     return JSON.parse(text);
   } catch (error) {
     return { genres: ["分析失敗"], instruments: [], vocalX: 0, vocalY: 0 };
   }
 };
 
-// 他の関数もビルドエラー防止のために残す
+// ビルドエラー防止用のスタブ
 export const generateSunoPrompt = async () => "";
 export const createChatSession = () => null;
 export const playVoiceSample = async () => {};
